@@ -2,16 +2,16 @@ pluginManagement {
     def flutterSdkPath = {
         def properties = new Properties()
         file("local.properties").withInputStream { properties.load(it) }
-        def flutterSdkPath = properties.getProperty("flutter.sdk")
-        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-        return flutterSdkPath
+        def flutterSdk = properties.getProperty("flutter.sdk")
+        assert flutterSdk != null, "flutter.sdk not set in local.properties"
+        return flutterSdk
     }
-    settings.ext.flutterSdkPath = flutterSdkPath()
+    settings.ext.flutterSdk = flutterSdkPath()
 
-    includeBuild("${settings.ext.flutterSdkPath}/packages/flutter_tools/gradle")
+    includeBuild("${settings.ext.flutterSdk}/packages/flutter_tools/gradle")
 
     repositories {
-        google()
+        google()        // <-- هذا السطر ناقص عندك
         mavenCentral()
         gradlePluginPortal()
     }
@@ -19,6 +19,8 @@ pluginManagement {
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+    id "com.android.application" version "8.1.0" apply false  // اختياري بس يفضل
+    id "org.jetbrains.kotlin.android" version "1.8.22" apply false // لو تستخدم kotlin
 }
 
 include ':app'
