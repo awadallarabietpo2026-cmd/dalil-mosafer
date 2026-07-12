@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(DalilMosaferApp());
 }
 
-class MyApp extends StatelessWidget {
+class DalilMosaferApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'دليل مسافر',
       debugShowCheckedModeBanner: false,
-      title: 'Dalil Al-Mosafer',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        fontFamily: 'Cairo',
+      ),
       home: HomePage(),
     );
   }
@@ -22,11 +26,24 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Dalil Al-Mosafer'),
         backgroundColor: Colors.teal,
+        centerTitle: true,
       ),
       body: Center(
-        child: Text(
-          'App is working',
-          style: TextStyle(fontSize: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.flight_takeoff, size: 100, color: Colors.teal),
+            SizedBox(height: 20),
+            Text(
+              'App is working',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'التطبيق شغال تمام ✅',
+              style: TextStyle(fontSize: 20, color: Colors.green),
+            ),
+          ],
         ),
       ),
     );
