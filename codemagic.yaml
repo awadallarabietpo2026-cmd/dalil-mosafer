@@ -5,11 +5,14 @@ workflows:
       flutter: 3.29.2
       java: 17
     scripts:
+      - name: Recreate Android project files
+        script: | 
+          flutter create --platforms=android .
       - name: Get dependencies
-        script: |
+        script: | 
           flutter pub get
       - name: Build APK
-        script: |
+        script: | 
           flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
