@@ -8,6 +8,10 @@ workflows:
       - name: Recreate Android project files
         script: | 
           flutter create --platforms=android .
+      - name: Fix Java version
+        script: |
+          sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' android/app/build.gradle
+          sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' android/app/build.gradle
       - name: Get dependencies
         script: | 
           flutter pub get
