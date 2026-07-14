@@ -22,6 +22,9 @@ workflows:
       - name: Get dependencies
         script: | 
           flutter pub get
+      - name: Print SHA256 for assetlinks
+        script: | 
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep "SHA256:"
       - name: Build APK
         script: | 
           flutter build apk --release
