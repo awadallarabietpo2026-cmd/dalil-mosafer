@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const DalilMosaferApp());
@@ -136,18 +138,194 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
-// ------ الشاشات الفرعية (لسه فاضية، هنملاها في المراحل الجاية) ------
+// ------ شاشة تحويل العملات (شغالة فعلياً) ------
 
-class CurrencyPage extends StatelessWidget {
+class CurrencyPage extends StatefulWidget {
   const CurrencyPage({super.key});
+
+  @override
+  State<CurrencyPage> createState() => _CurrencyPageState();
+}
+
+class _CurrencyPageState extends State<CurrencyPage> {
+  final List<String> currencies = [
+    'USD', 'EUR', 'EGP', 'GBP', 'SAR', 'AED', 'KWD', 'JPY', 'TRY', 'CNY'
+  ];
+
+  String fromCurrency = 'USD';
+  String toCurrency = 'EGP';
+  final TextEditingController amountController =
+      TextEditingController(text: '1');
+
+  bool isLoading = false;
+  String? result;
+  String? errorMessage;
+
+  Future<void> convertCurrency() async {
+    final amountText = amountController.text.trim();
+    final amount = double.tryParse(amountText);
+
+    if (amount == null || amount <= 0) {
+      setState(() {
+        errorMessage = 'من فضلك أدخل رقم صحيح';
+        result = null;
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      result = null;
+    });
+
+    try {
+      final url = Uri.parse(
+        'https://api.frankfurter.app/latest?amount=$amount&from=$fromCurrency&to=$toCurrency',
+      );
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final rateValue = data['rates'][toCurrency];
+        setState(() {
+          result =
+              '$amount $fromCurrency = ${rateValue.toStringAsFixed(2)} $toCurrency';
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = 'حصل خطأ، حاول تاني';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'مفيش اتصال بالإنترنت';
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تحويل عملات'), backgroundColor: Colors.teal),
-      body: const Center(child: Text('هنبني الميزة دي في المرحلة الجاية 🚧')),
+      appBar: AppBar(
+        title: const Text('تحويل عملات'),
+        backgroundColor: Colors.teal,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'المبلغ',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: fromCurrency,
+                    decoration: const InputDecoration(
+                      labelText: 'من',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: currencies
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => fromCurrency = value!);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: const Icon(Icons.swap_horiz, color: Colors.teal),
+                  onPressed: () {
+                    setState(() {
+                      final temp = fromCurrency;
+                      fromCurrency = toCurrency;
+                      toCurrency = temp;
+                    });
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: toCurrency,
+                    decoration: const InputDecoration(
+                      labelText: 'إلى',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: currencies
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => toCurrency = value!);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed: isLoading ? null : convertCurrency,
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'تحويل',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            if (result != null)
+              Card(
+                color: Colors.teal.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    result!,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            if (errorMessage != null)
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
+
+// ------ باقي الشاشات (لسه فاضية، هنملاها في المراحل الجاية) ------
 
 class BookingPage extends StatelessWidget {
   const BookingPage({super.key});
