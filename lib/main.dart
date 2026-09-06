@@ -375,7 +375,6 @@ class _NearbyPageState extends State<NearbyPage> {
     });
 
     try {
-      // تأكد إن خدمة الموقع شغالة
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
@@ -385,7 +384,6 @@ class _NearbyPageState extends State<NearbyPage> {
         return;
       }
 
-      // تأكد من صلاحية الموقع
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -406,12 +404,10 @@ class _NearbyPageState extends State<NearbyPage> {
         return;
       }
 
-      // جلب الموقع الحالي
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // البحث عبر Overpass API
       final query = '''
         [out:json];
         (
@@ -544,6 +540,185 @@ class _NearbyPageState extends State<NearbyPage> {
   }
 }
 
+// ------ شاشة الترجمة الفورية (جمل جاهزة أوفلاين) ------
+
+class PhraseEntry {
+  final String arabic;
+  final Map<String, String> translations;
+
+  PhraseEntry({required this.arabic, required this.translations});
+}
+
+class TranslatePage extends StatefulWidget {
+  const TranslatePage({super.key});
+
+  @override
+  State<TranslatePage> createState() => _TranslatePageState();
+}
+
+class _TranslatePageState extends State<TranslatePage> {
+  String selectedLanguage = 'en';
+
+  final Map<String, String> languageNames = {
+    'en': 'English',
+    'fr': 'Français',
+    'it': 'Italiano',
+    'es': 'Español',
+  };
+
+  final List<PhraseEntry> phrases = [
+    PhraseEntry(arabic: 'السلام عليكم', translations: {
+      'en': 'Hello',
+      'fr': 'Bonjour',
+      'it': 'Ciao',
+      'es': 'Hola',
+    }),
+    PhraseEntry(arabic: 'شكراً', translations: {
+      'en': 'Thank you',
+      'fr': 'Merci',
+      'it': 'Grazie',
+      'es': 'Gracias',
+    }),
+    PhraseEntry(arabic: 'من فضلك', translations: {
+      'en': 'Please',
+      'fr': 'S\'il vous plaît',
+      'it': 'Per favore',
+      'es': 'Por favor',
+    }),
+    PhraseEntry(arabic: 'فين الحمام؟', translations: {
+      'en': 'Where is the bathroom?',
+      'fr': 'Où sont les toilettes?',
+      'it': 'Dov\'è il bagno?',
+      'es': '¿Dónde está el baño?',
+    }),
+    PhraseEntry(arabic: 'محتاج طبيب', translations: {
+      'en': 'I need a doctor',
+      'fr': 'J\'ai besoin d\'un médecin',
+      'it': 'Ho bisogno di un medico',
+      'es': 'Necesito un médico',
+    }),
+    PhraseEntry(arabic: 'بكام ده؟', translations: {
+      'en': 'How much is this?',
+      'fr': 'Combien ça coûte?',
+      'it': 'Quanto costa?',
+      'es': '¿Cuánto cuesta esto?',
+    }),
+    PhraseEntry(arabic: 'أنا تايه', translations: {
+      'en': 'I am lost',
+      'fr': 'Je suis perdu',
+      'it': 'Mi sono perso',
+      'es': 'Estoy perdido',
+    }),
+    PhraseEntry(arabic: 'ممكن مساعدة؟', translations: {
+      'en': 'Can you help me?',
+      'fr': 'Pouvez-vous m\'aider?',
+      'it': 'Puoi aiutarmi?',
+      'es': '¿Puedes ayudarme?',
+    }),
+    PhraseEntry(arabic: 'فين أقرب فندق؟', translations: {
+      'en': 'Where is the nearest hotel?',
+      'fr': 'Où est l\'hôtel le plus proche?',
+      'it': 'Dov\'è l\'hotel più vicino?',
+      'es': '¿Dónde está el hotel más cercano?',
+    }),
+    PhraseEntry(arabic: 'اتصل بالبوليس', translations: {
+      'en': 'Call the police',
+      'fr': 'Appelez la police',
+      'it': 'Chiama la polizia',
+      'es': 'Llama a la policía',
+    }),
+    PhraseEntry(arabic: 'أنا مصري', translations: {
+      'en': 'I am Egyptian',
+      'fr': 'Je suis égyptien',
+      'it': 'Sono egiziano',
+      'es': 'Soy egipcio',
+    }),
+    PhraseEntry(arabic: 'مش فاهم', translations: {
+      'en': 'I don\'t understand',
+      'fr': 'Je ne comprends pas',
+      'it': 'Non capisco',
+      'es': 'No entiendo',
+    }),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ترجمة فورية'),
+        backgroundColor: Colors.teal,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Text('اللغة:', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedLanguage,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: languageNames.entries
+                        .map((e) => DropdownMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => selectedLanguage = value!);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: phrases.length,
+              itemBuilder: (context, index) {
+                final phrase = phrases[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          phrase.arabic,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          phrase.translations[selectedLanguage] ?? '',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ------ باقي الشاشات (لسه فاضية، هنملاها لاحقاً) ------
 
 class BookingPage extends StatelessWidget {
@@ -552,17 +727,6 @@ class BookingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('حجوزات'), backgroundColor: Colors.teal),
-      body: const Center(child: Text('هنبني الميزة دي لاحقاً 🚧')),
-    );
-  }
-}
-
-class TranslatePage extends StatelessWidget {
-  const TranslatePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('ترجمة فورية'), backgroundColor: Colors.teal),
       body: const Center(child: Text('هنبني الميزة دي لاحقاً 🚧')),
     );
   }
