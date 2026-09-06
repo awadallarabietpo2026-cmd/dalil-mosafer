@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 
 void main() {
   runApp(const DalilMosaferApp());
@@ -325,7 +326,225 @@ class _CurrencyPageState extends State<CurrencyPage> {
   }
 }
 
-// ------ باقي الشاشات (لسه فاضية، هنملاها في المراحل الجاية) ------
+// ------ شاشة الأماكن القريبة (شغالة فعلياً) ------
+
+class NearbyPlace {
+  final String name;
+  final String type;
+  final double lat;
+  final double lon;
+
+  NearbyPlace({
+    required this.name,
+    required this.type,
+    required this.lat,
+    required this.lon,
+  });
+}
+
+class NearbyPage extends StatefulWidget {
+  const NearbyPage({super.key});
+
+  @override
+  State<NearbyPage> createState() => _NearbyPageState();
+}
+
+class _NearbyPageState extends State<NearbyPage> {
+  String selectedType = 'hospital';
+  bool isLoading = false;
+  String? errorMessage;
+  List<NearbyPlace> places = [];
+
+  final Map<String, String> typeLabels = {
+    'hospital': 'مستشفى',
+    'pharmacy': 'صيدلية',
+    'police': 'شرطة',
+  };
+
+  final Map<String, IconData> typeIcons = {
+    'hospital': Icons.local_hospital,
+    'pharmacy': Icons.local_pharmacy,
+    'police': Icons.local_police,
+  };
+
+  Future<void> searchNearby() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      places = [];
+    });
+
+    try {
+      // تأكد إن خدمة الموقع شغالة
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          errorMessage = 'من فضلك فعّل خدمة الموقع (GPS)';
+          isLoading = false;
+        });
+        return;
+      }
+
+      // تأكد من صلاحية الموقع
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            errorMessage = 'محتاجين إذن الوصول للموقع عشان الميزة دي تشتغل';
+            isLoading = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          errorMessage = 'إذن الموقع مرفوض بشكل دائم، فعّله من إعدادات الجهاز';
+          isLoading = false;
+        });
+        return;
+      }
+
+      // جلب الموقع الحالي
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // البحث عبر Overpass API
+      final query = '''
+        [out:json];
+        (
+          node["amenity"="$selectedType"](around:5000,${position.latitude},${position.longitude});
+        );
+        out body 20;
+      ''';
+
+      final url = Uri.parse(
+        'https://overpass-api.de/api/interpreter?data=${Uri.encodeComponent(query)}',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final elements = data['elements'] as List;
+
+        final results = elements.map((e) {
+          final tags = e['tags'] ?? {};
+          return NearbyPlace(
+            name: tags['name'] ?? 'بدون اسم',
+            type: selectedType,
+            lat: e['lat'],
+            lon: e['lon'],
+          );
+        }).toList();
+
+        setState(() {
+          places = results.cast<NearbyPlace>();
+          isLoading = false;
+          if (places.isEmpty) {
+            errorMessage = 'مفيش نتائج قريبة منك';
+          }
+        });
+      } else {
+        setState(() {
+          errorMessage = 'حصل خطأ في السيرفر، حاول تاني';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'حصلت مشكلة، تأكد من الاتصال بالإنترنت والموقع';
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('أماكن قريبة'),
+        backgroundColor: Colors.teal,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: typeLabels.keys.map((type) {
+                final isSelected = selectedType == type;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ChoiceChip(
+                      label: Text(typeLabels[type]!),
+                      selected: isSelected,
+                      selectedColor: Colors.teal,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black,
+                      ),
+                      onSelected: (_) {
+                        setState(() => selectedType = type);
+                      },
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: isLoading ? null : searchNearby,
+                icon: const Icon(Icons.search, color: Colors.white),
+                label: Text(
+                  isLoading ? 'جاري البحث...' : 'ابحث عن أقرب مكان',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (isLoading) const CircularProgressIndicator(color: Colors.teal),
+            if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontSize: 15),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: places.length,
+                itemBuilder: (context, index) {
+                  final place = places[index];
+                  return Card(
+                    child: ListTile(
+                      leading: Icon(typeIcons[place.type], color: Colors.teal),
+                      title: Text(place.name),
+                      subtitle: Text(
+                        'خط العرض: ${place.lat.toStringAsFixed(4)}, خط الطول: ${place.lon.toStringAsFixed(4)}',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ------ باقي الشاشات (لسه فاضية، هنملاها لاحقاً) ------
 
 class BookingPage extends StatelessWidget {
   const BookingPage({super.key});
@@ -333,17 +552,6 @@ class BookingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('حجوزات'), backgroundColor: Colors.teal),
-      body: const Center(child: Text('هنبني الميزة دي لاحقاً 🚧')),
-    );
-  }
-}
-
-class NearbyPage extends StatelessWidget {
-  const NearbyPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('أماكن قريبة'), backgroundColor: Colors.teal),
       body: const Center(child: Text('هنبني الميزة دي لاحقاً 🚧')),
     );
   }
