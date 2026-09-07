@@ -19,13 +19,13 @@ if (flutterRoot == null) {
 
 android {
     namespace "com.example.dalil_mosafer"
-    compileSdkVersion 34
+    compileSdkVersion 35
     ndkVersion flutter.ndkVersion
 
     defaultConfig {
         applicationId "com.example.dalil_mosafer"
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode 1
         versionName "1.0"
     }
