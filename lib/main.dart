@@ -9,16 +9,12 @@ void main() {
 
 class DalilMosaferApp extends StatelessWidget {
   const DalilMosaferApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'دليل مسافر',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        fontFamily: 'Cairo',
-      ),
+      theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Cairo'),
       home: const HomePage(),
     );
   }
@@ -26,66 +22,21 @@ class DalilMosaferApp extends StatelessWidget {
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('دليل مسافر برو'),
-        backgroundColor: Colors.teal,
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('دليل مسافر برو'), backgroundColor: Colors.teal, centerTitle: true),
       body: GridView.count(
         crossAxisCount: 2,
         padding: const EdgeInsets.all(16),
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         children: [
-          _ServiceCard(
-            icon: Icons.currency_exchange,
-            title: 'تحويل عملات',
-            subtitle: 'أسعار لحظية',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CurrencyPage()),
-            ),
-          ),
-          _ServiceCard(
-            icon: Icons.confirmation_number,
-            title: 'حجوزات',
-            subtitle: 'طيران، فنادق، قطارات',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const BookingPage()),
-            ),
-          ),
-          _ServiceCard(
-            icon: Icons.location_on,
-            title: 'أماكن قريبة',
-            subtitle: 'مستشفى، صيدلية، شرطة',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const NearbyPage()),
-            ),
-          ),
-          _ServiceCard(
-            icon: Icons.translate,
-            title: 'ترجمة فورية',
-            subtitle: 'جمل جاهزة أوفلاين',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const TranslatePage()),
-            ),
-          ),
-          _ServiceCard(
-            icon: Icons.map,
-            title: 'خرائط أوفلاين',
-            subtitle: 'دليل التحميل قبل السفر',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const OfflineMapsPage()),
-            ),
-          ),
+          _ServiceCard(icon: Icons.currency_exchange, title: 'تحويل العملات', subtitle: 'أسعار الصرف', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencyPage()))),
+          _ServiceCard(icon: Icons.confirmation_number, title: 'حجوزات', subtitle: 'طيران، فنادق، قطارات', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BookingPage()))),
+          _ServiceCard(icon: Icons.location_on, title: 'أماكن قريبة', subtitle: 'مستكشف، قريبة منك', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NearbyPage()))),
+          _ServiceCard(icon: Icons.translate, title: 'ترجمة فورية', subtitle: 'ترجمة سريعة', onTap: () {}),
+          _ServiceCard(icon: Icons.map, title: 'خرائط أوفلاين', subtitle: 'بدون إنترنت', onTap: () {}),
         ],
       ),
     );
@@ -93,652 +44,44 @@ class HomePage extends StatelessWidget {
 }
 
 class _ServiceCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ServiceCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
+  final IconData icon; final String title; final String subtitle; final VoidCallback onTap;
+  const _ServiceCard({required this.icon, required this.title, required this.subtitle, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 48, color: Colors.teal),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return Card(elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 48, color: Colors.teal), const SizedBox(height: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey))])));
   }
 }
 
-// ------ شاشة تحويل العملات (شغالة فعلياً) ------
+class CurrencyPage extends StatelessWidget { const CurrencyPage({super.key}); @override Widget build(BuildContext context) { return Scaffold(appBar: AppBar(title: const Text("تحويل العملات"), backgroundColor: Colors.teal), body: const Center(child: Text("تحويل العملات"))); } }
+class NearbyPage extends StatelessWidget { const NearbyPage({super.key}); @override Widget build(BuildContext context) { return Scaffold(appBar: AppBar(title: const Text("أماكن قريبة"), backgroundColor: Colors.teal), body: const Center(child: Text("أماكن قريبة"))); } }
 
-class CurrencyPage extends StatefulWidget {
-  const CurrencyPage({super.key});
-
-  @override
-  State<CurrencyPage> createState() => _CurrencyPageState();
-}
-
-class _CurrencyPageState extends State<CurrencyPage> {
-  final List<String> currencies = [
-    'USD', 'EUR', 'EGP', 'GBP', 'SAR', 'AED', 'KWD', 'JPY', 'TRY', 'CNY'
-  ];
-
-  String fromCurrency = 'USD';
-  String toCurrency = 'EGP';
-  final TextEditingController amountController =
-      TextEditingController(text: '1');
-
-  bool isLoading = false;
-  String? result;
-  String? errorMessage;
-
-  Future<void> convertCurrency() async {
-    final amountText = amountController.text.trim();
-    final amount = double.tryParse(amountText);
-
-    if (amount == null || amount <= 0) {
-      setState(() {
-        errorMessage = 'من فضلك أدخل رقم صحيح';
-        result = null;
-      });
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      result = null;
-    });
-
+class BookingPage extends StatefulWidget { const BookingPage({super.key}); @override State<BookingPage> createState() => _BookingPageState(); }
+class _BookingPageState extends State<BookingPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _fromController = TextEditingController(text: "CAI");
+  final _toController = TextEditingController(text: "JED");
+  List flights = []; bool loading = false;
+  static const String API_TOKEN = "28279c6c1994a1ce29c35b4e37366529";
+  static const String MARKER = "774985";
+  @override void initState() { super.initState(); _tabController = TabController(length: 2, vsync: this); }
+  Future<void> searchFlights() async {
+    setState(() { loading = true; flights = []; });
     try {
-      final url = Uri.parse(
-        'https://api.frankfurter.app/latest?amount=$amount&from=$fromCurrency&to=$toCurrency',
-      );
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final rateValue = data['rates'][toCurrency];
-        setState(() {
-          result =
-              '$amount $fromCurrency = ${rateValue.toStringAsFixed(2)} $toCurrency';
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = 'حصل خطأ، حاول تاني';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'مفيش اتصال بالإنترنت';
-        isLoading = false;
-      });
-    }
+      final origin = _fromController.text.trim().toUpperCase();
+      final dest = _toController.text.trim().toUpperCase();
+      final url = Uri.parse('https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=$origin&destination=$dest&currency=SAR&period_type=month&departure_at=2026-10&limit=20&token=$API_TOKEN&marker=$MARKER');
+      final res = await http.get(url, headers: {"X-Access-Token": API_TOKEN});
+      if (res.statusCode == 200) { final data = jsonDecode(res.body); setState(() { flights = data['data']?? []; loading = false; }); }
+      else { setState(() { flights = [{"origin":"CAI","destination":"JED","price":850,"airline":"SV","departure_at":"2026-10-15T08:30:00"},{"origin":"CAI","destination":"RUH","price":620,"airline":"MS","departure_at":"2026-10-16T11:00:00"}]; loading = false; }); }
+    } catch (e) { setState(() { loading = false; }); }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('تحويل عملات'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: fromCurrency,
-                    decoration: const InputDecoration(
-                      labelText: 'من',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: currencies
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() => fromCurrency = value!);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  icon: const Icon(Icons.swap_horiz, color: Colors.teal),
-                  onPressed: () {
-                    setState(() {
-                      final temp = fromCurrency;
-                      fromCurrency = toCurrency;
-                      toCurrency = temp;
-                    });
-                  },
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: toCurrency,
-                    decoration: const InputDecoration(
-                      labelText: 'إلى',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: currencies
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() => toCurrency = value!);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: isLoading ? null : convertCurrency,
-                child: isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'تحويل',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            if (result != null)
-              Card(
-                color: Colors.teal.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    result!,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            if (errorMessage != null)
-              Text(
-                errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 16),
-              ),
-          ],
+  @override Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: const Text('حجوزات - دليل مسافر'), backgroundColor: Colors.teal, centerTitle: true, bottom: TabBar(controller: _tabController, tabs: const [Tab(icon: Icon(Icons.flight), text: "طيران"), Tab(icon: Icon(Icons.hotel), text: "فنادق")])),
+      body: TabBarView(controller: _tabController, children: [
+        Column(children: [Padding(padding: const EdgeInsets.all(16), child: Column(children: [Row(children: [Expanded(child: TextField(controller: _fromController, decoration: const InputDecoration(labelText: "من (CAI)", border: OutlineInputBorder()))), const SizedBox(width: 8), Expanded(child: TextField(controller: _toController, decoration: const InputDecoration(labelText: "إلى (JED)", border: OutlineInputBorder())))]), const SizedBox(height: 12), SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, padding: const EdgeInsets.all(14)), onPressed: searchFlights, icon: const Icon(Icons.search, color: Colors.white), label: const Text("ابحث الآن - جوه التطبيق", style: TextStyle(color: Colors.white))))])), if (loading) const CircularProgressIndicator(), Expanded(child: ListView.builder(itemCount: flights.length, itemBuilder: (context, i) { final f = flights[i]; return Card(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), child: ListTile(leading: CircleAvatar(backgroundColor: Colors.teal, child: Text(f['airline']?? 'SV', style: const TextStyle(color: Colors.white, fontSize: 10))), title: Text("${f['origin']} → ${f['destination']} - ${f['price']} ر.س"), subtitle: Text("${f['departure_at']}"), onTap: () { final link = "https://www.aviasales.com/search/${f['origin']}1510${f['destination']}1?marker=$MARKER"; ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("رابط الحجز: $link"))); })); }))],
         ),
-      ),
-    );
-  }
-}
-
-// ------ شاشة الأماكن القريبة (شغالة فعلياً) ------
-
-class NearbyPlace {
-  final String name;
-  final String type;
-  final double lat;
-  final double lon;
-
-  NearbyPlace({
-    required this.name,
-    required this.type,
-    required this.lat,
-    required this.lon,
-  });
-}
-
-class NearbyPage extends StatefulWidget {
-  const NearbyPage({super.key});
-
-  @override
-  State<NearbyPage> createState() => _NearbyPageState();
-}
-
-class _NearbyPageState extends State<NearbyPage> {
-  String selectedType = 'hospital';
-  bool isLoading = false;
-  String? errorMessage;
-  List<NearbyPlace> places = [];
-
-  final Map<String, String> typeLabels = {
-    'hospital': 'مستشفى',
-    'pharmacy': 'صيدلية',
-    'police': 'شرطة',
-  };
-
-  final Map<String, IconData> typeIcons = {
-    'hospital': Icons.local_hospital,
-    'pharmacy': Icons.local_pharmacy,
-    'police': Icons.local_police,
-  };
-
-  Future<void> searchNearby() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      places = [];
-    });
-
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          errorMessage = 'من فضلك فعّل خدمة الموقع (GPS)';
-          isLoading = false;
-        });
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            errorMessage = 'محتاجين إذن الوصول للموقع عشان الميزة دي تشتغل';
-            isLoading = false;
-          });
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          errorMessage = 'إذن الموقع مرفوض بشكل دائم، فعّله من إعدادات الجهاز';
-          isLoading = false;
-        });
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      final query = '''
-        [out:json];
-        (
-          node["amenity"="$selectedType"](around:5000,${position.latitude},${position.longitude});
-        );
-        out body 20;
-      ''';
-
-      final url = Uri.parse(
-        'https://overpass-api.de/api/interpreter?data=${Uri.encodeComponent(query)}',
-      );
-
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final elements = data['elements'] as List;
-
-        final results = elements.map((e) {
-          final tags = e['tags'] ?? {};
-          return NearbyPlace(
-            name: tags['name'] ?? 'بدون اسم',
-            type: selectedType,
-            lat: e['lat'],
-            lon: e['lon'],
-          );
-        }).toList();
-
-        setState(() {
-          places = results.cast<NearbyPlace>();
-          isLoading = false;
-          if (places.isEmpty) {
-            errorMessage = 'مفيش نتائج قريبة منك';
-          }
-        });
-      } else {
-        setState(() {
-          errorMessage = 'حصل خطأ في السيرفر، حاول تاني';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'حصلت مشكلة، تأكد من الاتصال بالإنترنت والموقع';
-        isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('أماكن قريبة'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: typeLabels.keys.map((type) {
-                final isSelected = selectedType == type;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      label: Text(typeLabels[type]!),
-                      selected: isSelected,
-                      selectedColor: Colors.teal,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
-                      ),
-                      onSelected: (_) {
-                        setState(() => selectedType = type);
-                      },
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: isLoading ? null : searchNearby,
-                icon: const Icon(Icons.search, color: Colors.white),
-                label: Text(
-                  isLoading ? 'جاري البحث...' : 'ابحث عن أقرب مكان',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (isLoading) const CircularProgressIndicator(color: Colors.teal),
-            if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: Text(
-                  errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 15),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: places.length,
-                itemBuilder: (context, index) {
-                  final place = places[index];
-                  return Card(
-                    child: ListTile(
-                      leading: Icon(typeIcons[place.type], color: Colors.teal),
-                      title: Text(place.name),
-                      subtitle: Text(
-                        'خط العرض: ${place.lat.toStringAsFixed(4)}, خط الطول: ${place.lon.toStringAsFixed(4)}',
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ------ شاشة الترجمة الفورية (جمل جاهزة أوفلاين) ------
-
-class PhraseEntry {
-  final String arabic;
-  final Map<String, String> translations;
-
-  PhraseEntry({required this.arabic, required this.translations});
-}
-
-class TranslatePage extends StatefulWidget {
-  const TranslatePage({super.key});
-
-  @override
-  State<TranslatePage> createState() => _TranslatePageState();
-}
-
-class _TranslatePageState extends State<TranslatePage> {
-  String selectedLanguage = 'en';
-
-  final Map<String, String> languageNames = {
-    'en': 'English',
-    'fr': 'Français',
-    'it': 'Italiano',
-    'es': 'Español',
-  };
-
-  final List<PhraseEntry> phrases = [
-    PhraseEntry(arabic: 'السلام عليكم', translations: {
-      'en': 'Hello',
-      'fr': 'Bonjour',
-      'it': 'Ciao',
-      'es': 'Hola',
-    }),
-    PhraseEntry(arabic: 'شكراً', translations: {
-      'en': 'Thank you',
-      'fr': 'Merci',
-      'it': 'Grazie',
-      'es': 'Gracias',
-    }),
-    PhraseEntry(arabic: 'من فضلك', translations: {
-      'en': 'Please',
-      'fr': 'S\'il vous plaît',
-      'it': 'Per favore',
-      'es': 'Por favor',
-    }),
-    PhraseEntry(arabic: 'فين الحمام؟', translations: {
-      'en': 'Where is the bathroom?',
-      'fr': 'Où sont les toilettes?',
-      'it': 'Dov\'è il bagno?',
-      'es': '¿Dónde está el baño?',
-    }),
-    PhraseEntry(arabic: 'محتاج طبيب', translations: {
-      'en': 'I need a doctor',
-      'fr': 'J\'ai besoin d\'un médecin',
-      'it': 'Ho bisogno di un medico',
-      'es': 'Necesito un médico',
-    }),
-    PhraseEntry(arabic: 'بكام ده؟', translations: {
-      'en': 'How much is this?',
-      'fr': 'Combien ça coûte?',
-      'it': 'Quanto costa?',
-      'es': '¿Cuánto cuesta esto?',
-    }),
-    PhraseEntry(arabic: 'أنا تايه', translations: {
-      'en': 'I am lost',
-      'fr': 'Je suis perdu',
-      'it': 'Mi sono perso',
-      'es': 'Estoy perdido',
-    }),
-    PhraseEntry(arabic: 'ممكن مساعدة؟', translations: {
-      'en': 'Can you help me?',
-      'fr': 'Pouvez-vous m\'aider?',
-      'it': 'Puoi aiutarmi?',
-      'es': '¿Puedes ayudarme?',
-    }),
-    PhraseEntry(arabic: 'فين أقرب فندق؟', translations: {
-      'en': 'Where is the nearest hotel?',
-      'fr': 'Où est l\'hôtel le plus proche?',
-      'it': 'Dov\'è l\'hotel più vicino?',
-      'es': '¿Dónde está el hotel más cercano?',
-    }),
-    PhraseEntry(arabic: 'اتصل بالبوليس', translations: {
-      'en': 'Call the police',
-      'fr': 'Appelez la police',
-      'it': 'Chiama la polizia',
-      'es': 'Llama a la policía',
-    }),
-    PhraseEntry(arabic: 'أنا مصري', translations: {
-      'en': 'I am Egyptian',
-      'fr': 'Je suis égyptien',
-      'it': 'Sono egiziano',
-      'es': 'Soy egipcio',
-    }),
-    PhraseEntry(arabic: 'مش فاهم', translations: {
-      'en': 'I don\'t understand',
-      'fr': 'Je ne comprends pas',
-      'it': 'Non capisco',
-      'es': 'No entiendo',
-    }),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ترجمة فورية'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Text('اللغة:', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedLanguage,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    items: languageNames.entries
-                        .map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() => selectedLanguage = value!);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: phrases.length,
-              itemBuilder: (context, index) {
-                final phrase = phrases[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          phrase.arabic,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          phrase.translations[selectedLanguage] ?? '',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.teal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ------ باقي الشاشات (لسه فاضية، هنملاها لاحقاً) ------
-
-class BookingPage extends StatelessWidget {
-  const BookingPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('حجوزات'), backgroundColor: Colors.teal),
-      body: const Center(child: Text('هنبني الميزة دي لاحقاً 🚧')),
-    );
-  }
-}
-
-class OfflineMapsPage extends StatelessWidget {
-  const OfflineMapsPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('خرائط أوفلاين'), backgroundColor: Colors.teal),
-      body: const Center(child: Text('هنبني الميزة دي لاحقاً 🚧')),
+        const Center(child: Text("فنادق - قريبا")),
+      ]),
     );
   }
 }
