@@ -120,7 +120,7 @@ class NearbyPage extends StatelessWidget {
   }
 }
 
-// ============== صفحة الحجوزات الجديدة - بتوكنك الحقيقي ==============
+// ============== صفحة الحجوزات - نسخة مصلّحة وآمنة ==============
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
   @override
@@ -133,9 +133,15 @@ class _BookingPageState extends State<BookingPage> with SingleTickerProviderStat
   final _toController = TextEditingController(text: "JED");
   List flights = [];
   bool loading = false;
-  
-  static const String API_TOKEN = "28279c6c1994a1ce29c35b4e37366529";
-  static const String MARKER = "774985";
+  bool hasError = false;
+
+  // التوكن والماركر بيجو وقت الـ build من GitHub Secrets، مش مكتوبين هون أبداً.
+  // لازم تضيف TRAVELPAYOUTS_API_TOKEN كـ secret بالمستودع، وتمررو بـ build.yml
+  // عبر: --dart-define=TRAVELPAYOUTS_API_TOKEN=${{ secrets.TRAVELPAYOUTS_API_TOKEN }}
+  static const String API_TOKEN =
+      String.fromEnvironment('TRAVELPAYOUTS_API_TOKEN', defaultValue: '');
+  static const String MARKER =
+      String.fromEnvironment('TRAVELPAYOUTS_MARKER', defaultValue: '774985');
 
   @override
   void initState() {
@@ -143,30 +149,45 @@ class _BookingPageState extends State<BookingPage> with SingleTickerProviderStat
     _tabController = TabController(length: 2, vsync: this);
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _fromController.dispose();
+    _toController.dispose();
+    super.dispose();
+  }
+
   Future<void> searchFlights() async {
-    setState(() { loading = true; flights = []; });
+    setState(() {
+      loading = true;
+      hasError = false;
+      flights = [];
+    });
     try {
       final origin = _fromController.text.trim().toUpperCase();
       final dest = _toController.text.trim().toUpperCase();
       final url = Uri.parse(
-        'https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=$origin&destination=$dest&currency=SAR&period_type=month&departure_at=2026-10&limit=20&token=$API_TOKEN&marker=$MARKER'
+        'https://api.travelpayouts.com/aviasales/v3/prices_for_dates'
+        '?origin=$origin&destination=$dest&currency=SAR&sorting=price&limit=20',
       );
       final res = await http.get(url, headers: {"X-Access-Token": API_TOKEN});
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        setState(() { flights = data['data'] ?? []; loading = false; });
+        setState(() {
+          flights = (data['data'] as List?) ?? [];
+          loading = false;
+        });
       } else {
         setState(() {
-          flights = [
-            {"origin":"CAI","destination":"JED","price":850,"airline":"SV","departure_at":"2026-10-15T08:30:00","duration":120},
-            {"origin":"CAI","destination":"RUH","price":620,"airline":"MS","departure_at":"2026-10-16T11:00:00","duration":150},
-            {"origin":"JED","destination":"CAI","price":790,"airline":"XY","departure_at":"2026-10-17T14:20:00","duration":130},
-          ];
+          hasError = true;
           loading = false;
         });
       }
     } catch (e) {
-      setState(() { loading = false; });
+      setState(() {
+        hasError = true;
+        loading = false;
+      });
     }
   }
 
@@ -195,12 +216,18 @@ class _BookingPageState extends State<BookingPage> with SingleTickerProviderStat
                     ]),
                     const SizedBox(height: 12),
                     SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, padding: const EdgeInsets.all(14)), onPressed: searchFlights, icon: const Icon(Icons.search, color: Colors.white), label: const Text("ابحث الآن - جوه التطبيق", style: TextStyle(color: Colors.white, fontSize: 16)))),
-                    const SizedBox(height: 8),
-                    Text("الماركر: $MARKER - الأرباح لك - توكن: ${API_TOKEN.substring(0,6)}...", style: const TextStyle(fontSize: 11, color: Colors.grey)),
                   ],
                 ),
               ),
               if (loading) const Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()),
+              if (hasError)
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'حصل خطأ أثناء جلب النتائج، جرّب مرة تانية',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
               Expanded(child: ListView.builder(itemCount: flights.length, itemBuilder: (context, i) {
                 final f = flights[i];
                 return Card(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), child: ListTile(
@@ -210,13 +237,13 @@ class _BookingPageState extends State<BookingPage> with SingleTickerProviderStat
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     final link = "https://www.aviasales.com/search/${f['origin']}1510${f['destination']}1?marker=$MARKER";
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("رابط الحجز بماركرك: $link")));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("رابط الحجز: $link")));
                   },
                 ));
               })),
             ],
           ),
-          const Center(child: Text("فنادق - قريبا")),
+          const Center(child: Text("فنادق - قريباً")),
         ],
       ),
     );
