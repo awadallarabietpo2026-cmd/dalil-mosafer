@@ -1,32 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
-const String kFlightWidgetScript = '''
-<script async src="https://tpemb.com/content?currency=usd&trs=571515&shmarker=774985&show_hotels=true&powered_by=true&locale=en&searchUrl=www.aviasales.com%2Fsearch&primary_override=%2332a8dd&color_button=%2332a8dd&color_icons=%2332a8dd&dark=%23262626&light=%23FFFFFF&secondary=%23FFFFFF&special=%23C4C4C4&color_focused=%2332a8dd&border_radius=0&plain=false&promo_id=7879&campaign_id=100" charset="utf-8"></script>
-''';
-
-String _wrapWidgetHtml(String widgetScript) {
-  return '''
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      padding: 12px;
-      background: #ffffff;
-      font-family: -apple-system, Roboto, sans-serif;
-    }
-  </style>
-</head>
-<body>
-  $widgetScript
-</body>
-</html>
-''';
-}
+import 'flight_search_screen.dart';
 
 class BookingsScreen extends StatefulWidget {
   const BookingsScreen({super.key});
@@ -67,7 +41,7 @@ class _BookingsScreenState extends State<BookingsScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _BookingWebView(htmlContent: _wrapWidgetHtml(kFlightWidgetScript)),
+          const FlightSearchScreen(),
           const _ComingSoonPlaceholder(),
         ],
       ),
@@ -96,43 +70,6 @@ class _ComingSoonPlaceholder extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _BookingWebView extends StatefulWidget {
-  final String htmlContent;
-  const _BookingWebView({required this.htmlContent});
-
-  @override
-  State<_BookingWebView> createState() => _BookingWebViewState();
-}
-
-class _BookingWebViewState extends State<_BookingWebView> {
-  late final WebViewController _controller;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (_) => setState(() => _isLoading = true),
-          onPageFinished: (_) => setState(() => _isLoading = false),
-        ),
-      )
-      ..loadHtmlString(widget.htmlContent);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        WebViewWidget(controller: _controller),
-        if (_isLoading) const Center(child: CircularProgressIndicator()),
-      ],
     );
   }
 }
