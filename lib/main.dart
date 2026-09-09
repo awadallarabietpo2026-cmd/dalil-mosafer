@@ -1,222 +1,194 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+
+const String MARKER = '774985';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox('favorites');
-  await Hive.openBox('history');
-  await Hive.openBox('settings');
-  runApp(MusafirPro());
+  runApp(const DalilApp());
 }
 
-class MusafirPro extends StatelessWidget {
+class DalilApp extends StatelessWidget {
+  const DalilApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'دليل مسافر برو',
-      theme: ThemeData(primarySwatch: Colors.teal, scaffoldBackgroundColor: Color(0xFFF5F7F8)),
-      home: MainScreen(),
+      home: const MainTabs(),
     );
   }
 }
 
-class MainScreen extends StatefulWidget { @override _MainScreenState createState() => _MainScreenState(); }
+class MainTabs extends StatefulWidget {
+  const MainTabs({super.key});
+  @override
+  State<MainTabs> createState() => _MainTabsState();
+}
 
-class _MainScreenState extends State<MainScreen> {
-  int currentIndex = 0;
-  final screens = [HomePage(), FavoritesPage(), HistoryPage(), ProfilePage()];
-  @override Widget build(BuildContext context) {
+class _MainTabsState extends State<MainTabs> {
+  int idx = 0;
+  final pages = [const FlightsTab(), const HotelsTab(), const NearbyTab(), const AccountTab()];
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: screens[currentIndex],
+      body: pages[idx],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (i) => setState(() => currentIndex = i),
+        currentIndex: idx,
+        onTap: (i)=> setState(()=> idx=i),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF00897B),
-        unselectedItemColor: Colors.grey,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "الرئيسية"),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "المفضلة"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "السجل"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "حسابي"),
+        selectedItemColor: const Color(0xFF00897B),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.flight_takeoff), label: 'طيران'),
+          BottomNavigationBarItem(icon: Icon(Icons.hotel_outlined), label: 'فنادق'),
+          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'قريب مني'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'حسابي'),
         ],
       ),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  final List<Map<String, dynamic>> services = [
-    {"icon": Icons.flight, "color": Colors.orange, "title": "حجوزات طيران", "sub": "MIL - CAI"},
-    {"icon": Icons.currency_exchange, "color": Colors.green, "title": "تحويل العملات", "sub": "EUR / EGP / USD"},
-    {"icon": Icons.hotel, "color": Colors.purple, "title": "حجوزات فنادق", "sub": "Booking.com"},
-    {"icon": Icons.location_on, "color": Colors.red, "title": "اماكن قريبة", "sub": "مطاعم - مساجد"},
-    {"icon": Icons.translate, "color": Colors.blue, "title": "ترجمة فورية", "sub": "عربي - ايطالي"},
-    {"icon": Icons.map, "color": Colors.teal, "title": "خرائط", "sub": "خرائط ميلانو"},
-  ];
-  @override Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("دليل مسافر برو", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Color(0xFF00897B), centerTitle: true),
-      body: GridView.builder(
-        padding: EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.95),
-        itemCount: services.length,
-        itemBuilder: (ctx, i) {
-          var s = services[i];
-          return InkWell(
-            onTap: () { if (i == 0) Navigator.push(ctx, MaterialPageRoute(builder: (_) => FlightSearch())); else Navigator.push(ctx, MaterialPageRoute(builder: (_) => OtherServices(index: i, title: s["title"]))); },
-            child: Card(elevation: 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Container(padding: EdgeInsets.all(12), decoration: BoxDecoration(color: s["color"].withOpacity(0.15), shape: BoxShape.circle), child: Icon(s["icon"], size: 48, color: s["color"])),
-              SizedBox(height: 14),
-              Text(s["title"], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              SizedBox(height: 5),
-              Text(s["sub"], style: TextStyle(color: Colors.grey[600], fontSize: 11), textAlign: TextAlign.center),
-            ])),
-          );
-        },
-      ),
-    );
-  }
+class FlightsTab extends StatefulWidget {
+  const FlightsTab({super.key});
+  @override
+  State<FlightsTab> createState() => _FlightsTabState();
 }
 
-class FlightSearch extends StatefulWidget { @override _FlightSearchState createState() => _FlightSearchState(); }
-
-class _FlightSearchState extends State<FlightSearch> {
-  TextEditingController fromCtrl = TextEditingController(text: "MIL");
-  TextEditingController toCtrl = TextEditingController(text: "CAI");
-  List flights = [];
-  bool loading = false;
-  final String marker = "774985";
-  var favBox = Hive.box('favorites');
-  var historyBox = Hive.box('history');
-
-  @override void initState() { super.initState(); searchFlights(); }
-
-  void searchFlights() async {
-    setState(() => loading = true);
-    var searchKey = "${fromCtrl.text}-${toCtrl.text}-${DateTime.now().toString().substring(0,16)}";
-    historyBox.put(searchKey, {"from": fromCtrl.text, "to": toCtrl.text, "date": DateTime.now().toString()});
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> lastSearches = prefs.getStringList('lastSearches')?? [];
-    lastSearches.insert(0, "${fromCtrl.text} -> ${toCtrl.text}");
-    if (lastSearches.length > 10) lastSearches = lastSearches.sublist(0,10);
-    await prefs.setStringList('lastSearches', lastSearches);
-    await Future.delayed(Duration(milliseconds: 500));
-    setState(() {
-      flights = [
-        {"id": "${fromCtrl.text}${toCtrl.text}1", "price": 451, "airline": "Wizz Air", "departure": "16 Sep - 10:30", "duration": "مباشر", "link": "https://www.aviasales.com/search/${fromCtrl.text}1609${toCtrl.text}1?marker=$marker"},
-        {"id": "${fromCtrl.text}${toCtrl.text}2", "price": 389, "airline": "Turkish Airlines", "departure": "17 Sep - 14:15", "duration": "ترانزيت", "link": "https://www.aviasales.com/search/${fromCtrl.text}1709${toCtrl.text}1?marker=$marker"},
-        {"id": "${fromCtrl.text}${toCtrl.text}3", "price": 523, "airline": "ITA Airways", "departure": "18 Sep - 09:00", "duration": "مباشر", "link": "https://www.aviasales.com/search/${fromCtrl.text}1809${toCtrl.text}1?marker=$marker"},
-        {"id": "${fromCtrl.text}${toCtrl.text}4", "price": 412, "airline": "EgyptAir", "departure": "19 Sep - 22:45", "duration": "مباشر", "link": "https://www.aviasales.com/search/${fromCtrl.text}1909${toCtrl.text}1?marker=$marker"},
-      ];
-      loading = false;
-    });
+class _FlightsTabState extends State<FlightsTab> {
+  final fromC = TextEditingController(text: 'MIL');
+  final toC = TextEditingController(text: 'CAI');
+  Future<void> book(String from, String to) async {
+    final uri = Uri.parse('https://www.aviasales.com/search/$from${to}1?marker=774985&with_request=true');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
-
-  void toggleFavorite(Map flight) {
-    if (favBox.containsKey(flight['id'])) {
-      favBox.delete(flight['id']);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("تم الحذف من المفضلة")));
-    } else {
-      favBox.put(flight['id'], flight);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("تم الحفظ في المفضلة ❤️"), backgroundColor: Colors.green));
-    }
-    setState(() {});
-  }
-
-  Future<void> bookFlight(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("رحلات: ${fromCtrl.text} -> ${toCtrl.text}"), backgroundColor: Color(0xFF00897B)),
+      appBar: AppBar(backgroundColor: const Color(0xFF00897B), title: Text('رحلات: ${fromC.text} -> ${toC.text}')),
       body: Column(children: [
-        Container(padding: EdgeInsets.all(16), color: Colors.white, child: Row(children: [
-          Expanded(child: TextField(controller: fromCtrl, decoration: InputDecoration(labelText: "من", border: OutlineInputBorder(), isDense: true))),
-          SizedBox(width: 8), Icon(Icons.arrow_forward), SizedBox(width: 8),
-          Expanded(child: TextField(controller: toCtrl, decoration: InputDecoration(labelText: "الى", border: OutlineInputBorder(), isDense: true))),
-          SizedBox(width: 8),
-          ElevatedButton(onPressed: searchFlights, style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), child: Icon(Icons.search))
+        Container(color: Colors.white, padding: const EdgeInsets.all(16), child: Row(children: [
+          Expanded(child: TextField(controller: fromC, decoration: InputDecoration(labelText: 'من', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+          const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Icon(Icons.arrow_forward)),
+          Expanded(child: TextField(controller: toC, decoration: InputDecoration(labelText: 'إلى', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+          const SizedBox(width: 8),
+          CircleAvatar(backgroundColor: const Color(0xFFFF8F00), radius: 24, child: IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: ()=> setState((){}))),
         ])),
-        if (loading) Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()),
-        if (!loading) Expanded(child: ListView.builder(padding: EdgeInsets.all(12), itemCount: flights.length, itemBuilder: (ctx, i) {
-          var f = flights[i];
-          bool isFav = favBox.containsKey(f['id']);
-          return Card(margin: EdgeInsets.only(bottom: 12), elevation: 3, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), child: ListTile(
-            leading: IconButton(icon: Icon(isFav?Icons.favorite:Icons.favorite_border, color: isFav?Colors.red:Colors.grey), onPressed: ()=>toggleFavorite(f)),
-            title: Text("${f['airline']}", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("${f['departure']} - ${f['duration']}"),
-            trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text("€${f['price']}", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF00897B))),
-              ElevatedButton(onPressed: () => bookFlight(f['link']), style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, minimumSize: Size(70, 28)), child: Text("احجز", style: TextStyle(fontSize: 12)))
-            ]),
-          ));
-        })),
+        Expanded(child: ListView(children: [
+          _card('Wizz Air','€451','16 Sep - 10:30 - مباشر',Colors.pink),
+          _card('Turkish Airlines','€389','17 Sep - 14:15 - ترانزيت',Colors.red),
+          _card('ITA Airways','€523','18 Sep - 09:00 - مباشر',Colors.blue),
+          _card('EgyptAir','€412','19 Sep - 22:45 - مباشر',Colors.indigo),
+        ])),
       ]),
     );
   }
-}
-
-class FavoritesPage extends StatefulWidget { @override _FavoritesPageState createState() => _FavoritesPageState(); }
-class _FavoritesPageState extends State<FavoritesPage> {
-  var favBox = Hive.box('favorites');
-  Future<void> bookFlight(String url) async { final uri = Uri.parse(url); if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication); }
-  @override Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: Text("المفضلة ❤️"), backgroundColor: Color(0xFF00897B)), body: ValueListenableBuilder(valueListenable: favBox.listenable(), builder: (ctx, Box box, _) {
-      if (box.isEmpty) return Center(child: Text("لا يوجد رحلات محفوظة"));
-      return ListView.builder(padding: EdgeInsets.all(12), itemCount: box.length, itemBuilder: (ctx, i) {
-        var key = box.keyAt(i); var f = box.get(key);
-        return Card(child: ListTile(title: Text(f['airline']), subtitle: Text("€${f['price']}"), trailing: IconButton(icon: Icon(Icons.delete, color: Colors.red), onPressed: ()=>box.delete(key))));
-      });
-    }));
+  Widget _card(String a,String p,String t,Color c){
+    return Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]), child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
+      const Icon(Icons.favorite_border, color: Colors.grey),
+      const SizedBox(width:12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(a, style: const TextStyle(fontWeight: FontWeight.bold)), Text(t, style: const TextStyle(color: Colors.grey, fontSize:12))])),
+      Column(children: [Text(p, style: const TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold, fontSize:18)), ElevatedButton(onPressed: ()=> book(fromC.text, toC.text), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF8F00)), child: const Text('احجز', style: TextStyle(color: Colors.white)))]),
+    ])));
   }
 }
 
-class HistoryPage extends StatefulWidget { @override _HistoryPageState createState() => _HistoryPageState(); }
-class _HistoryPageState extends State<HistoryPage> {
-  var historyBox = Hive.box('history');
-  @override Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: Text("سجل البحث"), backgroundColor: Color(0xFF00897B), actions: [IconButton(icon: Icon(Icons.delete_forever), onPressed: ()=>historyBox.clear())]), body: ValueListenableBuilder(valueListenable: historyBox.listenable(), builder: (ctx, Box box, _) {
-      if (box.isEmpty) return Center(child: Text("لا يوجد سجل"));
-      var keys = box.keys.toList().reversed.toList();
-      return ListView.builder(itemCount: keys.length, itemBuilder: (ctx, i) {
-        var data = box.get(keys[i]); return Card(child: ListTile(title: Text("${data['from']} -> ${data['to']}"), subtitle: Text(data['date'].toString().substring(0,16))));
-      });
-    }));
-  }
+class HotelsTab extends StatefulWidget {
+  const HotelsTab({super.key});
+  @override
+  State<HotelsTab> createState() => _HotelsTabState();
 }
-
-class ProfilePage extends StatelessWidget {
-  @override Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: Text("حسابي"), backgroundColor: Color(0xFF00897B)), body: ListView(padding: EdgeInsets.all(16), children: [
-      Card(child: Padding(padding: EdgeInsets.all(16), child: Column(children: [CircleAvatar(radius: 40, backgroundColor: Color(0xFF00897B), child: Icon(Icons.person, size: 40, color: Colors.white)), SizedBox(height: 12), Text("عوض الله ربيع", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), Text("مقيم في ميلانو")]))),
-      Card(child: ListTile(leading: Icon(Icons.storage, color: Colors.teal), title: Text("قاعدة البيانات"), subtitle: Text("Hive + SharedPreferences - تحفظ Offline"))),
-      Card(child: ListTile(leading: Icon(Icons.code, color: Colors.orange), title: Text("كود العمولة"), subtitle: Text("774985"))),
+class _HotelsTabState extends State<HotelsTab> {
+  final cityC = TextEditingController(text: 'Cairo');
+  Future<void> bookH(String city) async {
+    final uri = Uri.parse('https://www.hotellook.com/?marker=774985&city=$city&currency=eur&locale=ar');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(backgroundColor: const Color(0xFF00897B), title: Text('فنادق: ${cityC.text}')), body: Column(children: [
+      Container(color: Colors.white, padding: const EdgeInsets.all(16), child: Row(children: [Expanded(child: TextField(controller: cityC, decoration: InputDecoration(labelText: 'المدينة', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))), const SizedBox(width:8), CircleAvatar(backgroundColor: const Color(0xFFFF8F00), radius:24, child: IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: ()=> setState((){})))])),
+      Expanded(child: ListView(children: [
+        Card(child: ListTile(title: const Text('Hilton Cairo'), subtitle: const Text('⭐ 4.5 - وسط البلد'), trailing: ElevatedButton(onPressed: ()=> bookH(cityC.text), style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), child: const Text('احجز')))),
+        Card(child: ListTile(title: const Text('Marriott Mena House'), subtitle: const Text('⭐ 4.8 - الأهرامات'), trailing: ElevatedButton(onPressed: ()=> bookH(cityC.text), style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), child: const Text('احجز')))),
+      ])),
     ]));
   }
 }
 
-class OtherServices extends StatefulWidget { final int index; final String title; OtherServices({required this.index, required this.title}); @override _OtherServicesState createState() => _OtherServicesState(); }
-class _OtherServicesState extends State<OtherServices> {
-  String data = "جاري التحميل...";
-  @override void initState() { super.initState(); load(); }
-  Future<void> openUrl(String url) async { final uri = Uri.parse(url); if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication); }
-  load() async {
-    if (widget.index == 1) {
-      try { var r = await http.get(Uri.parse("https://api.exchangerate-api.com/v4/latest/EUR")); var j = json.decode(r.body); setState(() => data = "1€ = ${j['rates']['EGP'].toStringAsFixed(2)} EGP\n1€ = ${j['rates']['USD'].toStringAsFixed(2)} USD"); } catch (e) { setState(() => data = "1€ = 54.20 جنيه"); }
-    } else if (widget.index == 2) { await openUrl("https://www.booking.com/city/it/milan.html"); if(mounted) Navigator.pop(context); }
-    else if (widget.index == 3) { await openUrl("https://www.google.com/maps/search/milan+restaurants"); if(mounted) Navigator.pop(context); }
-    else if (widget.index == 4) setState(() => data = "Ciao = مرحبا\nGrazie = شكرا");
-    else if (widget.index == 5) { await openUrl("https://www.google.com/maps/@45.4642,9.1900,14z"); if(mounted) Navigator.pop(context); }
+class NearbyTab extends StatefulWidget {
+  const NearbyTab({super.key});
+  @override
+  State<NearbyTab> createState() => _NearbyTabState();
+}
+class _NearbyTabState extends State<NearbyTab> {
+  String loc = 'اضغط لتحديد موقعك';
+  Future<void> openMap(String q) async {
+    try{
+      LocationPermission p = await Geolocator.checkPermission();
+      if(p==LocationPermission.denied) p = await Geolocator.requestPermission();
+      final pos = await Geolocator.getCurrentPosition();
+      setState(()=> loc = "${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}");
+      final uri = Uri.parse('https://www.google.com/maps/search/$q/@${pos.latitude},${pos.longitude},14z');
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }catch(e){
+      final uri = Uri.parse('https://www.google.com/maps/search/$q/');
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
-  @override Widget build(BuildContext context) { return Scaffold(appBar: AppBar(title: Text(widget.title), backgroundColor: Color(0xFF00897B)), body: Center(child: Text(data, style: TextStyle(fontSize: 20), textAlign: TextAlign.center))); }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(backgroundColor: const Color(0xFF00897B), title: const Text('خرائط و قريب مني')), body: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+      Card(child: ListTile(leading: const Icon(Icons.my_location, color: Color(0xFF00897B)), title: Text(loc), subtitle: const Text('GPS حقيقي'), onTap: ()=> openMap(''))),
+      Expanded(child: GridView.count(crossAxisCount:2, children: [
+        Card(child: InkWell(onTap: ()=> openMap('hotels near me'), child: const Center(child: Text('🏨 فنادق قريبة')))),
+        Card(child: InkWell(onTap: ()=> openMap('restaurants near me'), child: const Center(child: Text('🍽️ مطاعم قريبة')))),
+        Card(child: InkWell(onTap: ()=> openMap('gas station near me'), child: const Center(child: Text('⛽ بنزين')))),
+        Card(child: InkWell(onTap: ()=> openMap('hospital near me'), child: const Center(child: Text('🏥 مستشفى')))),
+      ])),
+    ])));
+  }
+}
+
+class AccountTab extends StatelessWidget {
+  const AccountTab({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(backgroundColor: const Color(0xFF00897B), title: const Text('الإعدادات')), body: ListView(children: [
+      const Padding(padding: EdgeInsets.all(16), child: Text('المنطقة', style: TextStyle(fontWeight: FontWeight.bold, fontSize:18))),
+      const ListTile(title: Text('العملة'), subtitle: Text('يورو'), trailing: Icon(Icons.chevron_left)),
+      const Divider(),
+      const ListTile(title: Text('اختر البلد أو المنطقة'), subtitle: Text('إيطاليا'), trailing: Icon(Icons.chevron_left)),
+      const Divider(),
+      ListTile(title: const Text('اللغة'), trailing: const Icon(Icons.open_in_new), onTap: () async { await launchUrl(Uri.parse('https://awadallarabieto2026-cmd.github.io/dalil-mosafer/privacy.html'), mode: LaunchMode.externalApplication); }),
+      const Padding(padding: EdgeInsets.all(16), child: Text('أخرى', style: TextStyle(fontWeight: FontWeight.bold, fontSize:18))),
+      const ListTile(title: Text('خيارات التسويق'), trailing: Icon(Icons.chevron_left)),
+      const Divider(),
+      const ListTile(title: Text('إعدادات البيانات'), trailing: Icon(Icons.chevron_left)),
+      const Padding(padding: EdgeInsets.all(16), child: Text('الدعم', style: TextStyle(fontWeight: FontWeight.bold, fontSize:18))),
+      ListTile(title: const Text('الحصول على المساعدة'), trailing: const Icon(Icons.open_in_new), onTap: () async { await launchUrl(Uri.parse('https://www.travelpayouts.com/support'), mode: LaunchMode.externalApplication); }),
+      const Divider(),
+      ListTile(title: const Text('تقييم التطبيق'), trailing: const Icon(Icons.open_in_new), onTap: () async { await launchUrl(Uri.parse('https://play.google.com/store'), mode: LaunchMode.externalApplication); }),
+      const Padding(padding: EdgeInsets.all(16), child: Text('الشروط والسياسات', style: TextStyle(fontWeight: FontWeight.bold, fontSize:18))),
+      ListTile(title: const Text('سياسة الخصوصية'), trailing: const Icon(Icons.open_in_new), onTap: () async { await launchUrl(Uri.parse('https://awadallarabieto2026-cmd.github.io/dalil-mosafer/privacy.html'), mode: LaunchMode.externalApplication); }),
+      const Divider(),
+      const ListTile(title: Text('شروط الخدمة'), trailing: Icon(Icons.open_in_new)),
+      const Divider(),
+      const ListTile(title: Text('تراخيص الطرف الثالث'), trailing: Icon(Icons.chevron_left)),
+      const Divider(),
+      const ListTile(title: Text('بيان سهولة الوصول'), trailing: Icon(Icons.open_in_new)),
+      const Padding(padding: EdgeInsets.all(16), child: Text('بياناتك', style: TextStyle(fontWeight: FontWeight.bold, fontSize:18))),
+      const ListTile(title: Text('معلومات تسجيل الدخول'), trailing: Icon(Icons.chevron_left)),
+      const Divider(),
+      const ListTile(title: Text('إدارة الحساب'), trailing: Icon(Icons.chevron_left)),
+      const Divider(),
+      const ListTile(title: Text('تسجيل الخروج', style: TextStyle(color: Colors.blue))),
+      const SizedBox(height:30),
+      const Center(child: Text('دليل مسافر برو - عوض الله ربيع - 774985', style: TextStyle(color: Colors.grey, fontSize:12))),
+    ]));
+  }
 }
